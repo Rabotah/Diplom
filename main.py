@@ -1,4 +1,3 @@
-import sys
 from PyQt.window import *
 import matplotlib.pyplot as plt
 from functions import *
@@ -49,12 +48,18 @@ if __name__ == "__main__":
     n_iter = 1000  # количество итераций
     time_step = 5  # шаг времени за 1 итерацию, с
 
+    print('\n', '-'*30, 'Начало расчётов', '-'*30)
+
     # объявление переменных, коэффициенты сразу переводим в разы
     v = window.info[0]
     h = window.info[1]
     r = window.info[2]
     p_N = window.info[3]
     t_p = window.info[4]
+    if (t_p == 0):
+        print('Введена нулевая длительность импульса')
+        user_input = input("Нажмите enter, чтобы выйти")
+        sys.exit(-1)
     in_coeff = db_converter(window.info[5])
     out_coeff = db_converter(window.info[6])
     l = window.info[7]
@@ -68,10 +73,17 @@ if __name__ == "__main__":
     T_sh = count_T_sh(noise)
     print('Шумовая температура ', T_sh)
 
-    P_rls = count_P_rls(p_N, t_p, in_coeff, out_coeff, l,
-                        lose_out, lose_in, lose_proc, T_sh)
+    try:
+        P_rls = count_P_rls(p_N, t_p, in_coeff, out_coeff, l,
+                            lose_out, lose_in, lose_proc, T_sh)
+    except ZeroDivisionError:
+        print('Ошибка деления на 0')
+        user_input = input("Нажмите enter, чтобы выйти")
+        sys.exit()
+
     print('Потенциал РЛС ', P_rls)
 
+    way = np.zeros(n_iter)  # пройденный путь, км
     dist = np.zeros(n_iter)  # измерения дальности каждые 5 секунд, км
     q_p = np.zeros(n_iter)   # массив ОСШ
     d_m = np.zeros(n_iter)   # массив ошибок измерения дальности, км
@@ -83,18 +95,20 @@ if __name__ == "__main__":
     sigma_z = np.zeros(n_iter)  # массив ошибок преобразования z координаты
 
     # Значения ошибок при R = 0
+    dist[0] = window.info[14]
     q_p[0] = count_OSH(P_rls, r, 0, h)
     d_m[0] = count_dist_mistake(t_p, q_p[0])
     p_m[0] = count_ang_pos_mistake(DNA_width, q_p[0])
-    seat_angle[0] = 0
-    azimuth[0] = convert_degrees_to_radians(80)
+    seat_angle[0] = count_seat_angle(dist[0], h)
+    azimuth[0] = convert_degrees_to_radians(window.info[15])
     sigma_x[0] = count_sigma_x(0, seat_angle[0], azimuth[0], d_m[0], p_m[0])
     sigma_y[0] = count_sigma_y(0, seat_angle[0], azimuth[0], d_m[0], p_m[0])
     sigma_z[0] = count_sigma_z(0, seat_angle[0], azimuth[0], d_m[0], p_m[0])
 
     # считаем значения дальности и ошибок каждые 5с 1000 раз
     for t in range(1, n_iter):
-        dist[t] = dist[t-1] + v*time_step*10**(-3)
+        way[t] = way[t-1] + v*time_step*10**(-3)
+        dist[t] = np.sqrt(h**2 + way[t]**2)
         q_p[t] = count_OSH(P_rls, r, dist[t], h)
         d_m[t] = count_dist_mistake(t_p, q_p[t])
         p_m[t] = count_ang_pos_mistake(DNA_width, q_p[t])

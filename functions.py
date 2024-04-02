@@ -1,4 +1,5 @@
 import numpy as np
+import sys
 
 #конвертирует дб в разы
 def db_converter(coeff):
@@ -21,23 +22,26 @@ def count_P_rls(p_N, t_p, in_coeff, out_coeff, l, lose_out, lose_in, lose_proc, 
 
 #Считает ОСШ
 def count_OSH (P_rls, r, dist, height):
-    q_p = 0.0
-    q_p = P_rls * r * 10**(-12) / (height**2 + dist**2)**2
+    try:
+        q_p = P_rls * r * 10**(-12) / (height**2 + dist**2)**2
+    except ZeroDivisionError:
+        q_p = 0.0
     return q_p
 
 #Считаем ошибку измерения дистанции
 def count_dist_mistake(t_p, q_p):
-    dist_mistake = 0.0
     C_0 = 3 * 10**5
     P_eff = np.pi / (t_p * np.sqrt(3))  # Эффективная ширина спектра сигнала для прямоугольного импульса
-    dist_mistake = C_0 /(2 * np.sqrt(2 * q_p) * P_eff)
+    dist_mistake = C_0 / (2 * np.sqrt(2 * q_p) * P_eff)
     return dist_mistake
 
 #Считаем ошибку определения углового положения
 def count_ang_pos_mistake(DNA_width, q_p):
-    pos_mistake = 0.0
     K_prop = 1 / np.sqrt(np.pi) #Коэффициент пропорциональности для прямоугольного импульса
-    pos_mistake = K_prop * DNA_width / np.sqrt(2 * q_p)
+    try:
+        pos_mistake = K_prop * DNA_width / np.sqrt(2 * q_p)
+    except ZeroDivisionError:
+        pos_mistake = 0.0
     return pos_mistake
 
 def convert_degrees_to_radians(degrees):
@@ -45,7 +49,10 @@ def convert_degrees_to_radians(degrees):
 
 # считаем угол места (принимаем за истину то, что высота не меняется)
 def count_seat_angle(dist, h):
-    return convert_degrees_to_radians(np.arcsin(h/dist))
+    if h == 0 or dist == 0:
+        return 0
+    else:
+        return convert_degrees_to_radians(np.arcsin(h/dist))
 
 def count_sigma_x(dist, angle, azimuth, sigma_dist, sigma_angle):
     first = (np.cos(angle)*np.cos(azimuth)*sigma_dist)**2
@@ -64,4 +71,3 @@ def count_sigma_z(dist, angle, azimuth, sigma_dist, sigma_angle):
     second = 0
     third = (dist * np.cos(angle) * sigma_angle) ** 2
     return np.sqrt(first + second + third)
-

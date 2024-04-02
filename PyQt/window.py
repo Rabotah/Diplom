@@ -1,6 +1,7 @@
 from PyQt6.QtWidgets import QApplication, QMainWindow, QVBoxLayout, QMessageBox, \
     QWidget, QLabel, QLineEdit, QPushButton, QHBoxLayout, QGridLayout
 from PyQt6.QtCore import Qt, QCoreApplication
+import sys
 
 # проверка вводных данных
 def is_float(text):
@@ -18,8 +19,8 @@ class MainWindow(QWidget):
         "коэффициент усиления передающей антенны, дб", "коэффициент усиления принимающей антенны, дб",
         "длину волны, м", "коэффициент шума, дб", "потери при приеме сигнала, дб",
         "потери при передаче сигнала, дб","потери при обработке сигнала, дб", "вероятность ложной тревоги",
-                       "Ширина ДНА по половинной мощности, °"]
-        self.info = [0.0]*14
+                       "ширину ДНА по половинной мощности, °", "начальную дальность до РЛС, км", "начальный азимут, °"]
+        self.info = [0.0]*16
         self.texts = []
         self.is_okay = False
 
@@ -94,6 +95,6 @@ class MainWindow(QWidget):
             # иначе закрывается окно подтверждения
             if reply == QMessageBox.StandardButton.Yes:
                 event.accept()
-                exit()
+                sys.exit(0)
             else:
                 event.ignore()
